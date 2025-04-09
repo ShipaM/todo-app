@@ -9,8 +9,8 @@ export const AddTodo: React.FC<AddTodoProps> = ({ onAddTodo }) => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (text) {
-      onAddTodo(text.trim());
+    if (text.trim()) {
+      onAddTodo(text);
     }
     setText("");
   };
