@@ -7,6 +7,7 @@ import { ToggleTheme } from "./components/ToggleTheme";
 import { getInitialTheme } from "./helpers/getInitialTheme";
 import { toggleTheme } from "./helpers/toggleTheme";
 import { API_URL, LOCAL_STORAGE_KEY } from "./constants";
+import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -14,6 +15,11 @@ function App() {
     getInitialTheme
   );
 
+  const [deletingId, setDeletingId] = useState<number | string | null>(null);
+
+  const [isDeletingCompleted, setIsDeletingCompleted] =
+    useState<boolean>(false);
+  useState<boolean>(false);
   useEffect(() => {
     const loadInitialDate = async () => {
       const savedTodos = JSON.parse(
@@ -73,7 +79,7 @@ function App() {
     }
   };
 
-  const onDelete = async (id: number | string): Promise<void> => {
+  const handleDelete = async (id: number | string): Promise<void> => {
     const previousTodos = todos;
     const updatedTodos = todos.filter((todo) => todo.id !== id);
     setTodos(updatedTodos);
@@ -120,6 +126,47 @@ function App() {
     }
   };
 
+  const hasCompletedTodos = todos.some((todo) => todo.isCompleted);
+
+  const handleCompleteDeleted = async () => {
+    if (!hasCompletedTodos) return;
+    setIsDeletingCompleted(true);
+    // const completedTodos = todos.filter((todo) => todo.isCompleted);
+    // localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(completedTodos));
+    // setTodos(completedTodos);
+  };
+  const confirmDeleteCompleted = async () => {
+    const originalTodos = [...todos];
+
+    const completeIds = originalTodos
+      .filter((todo) => todo.isCompleted)
+      .map((todo) => todo.id);
+
+    setTodos(originalTodos.filter((todo) => !todo.isCompleted));
+
+    const failedIds: (string | number)[] = [];
+
+    for (const id of completeIds) {
+      try {
+        await fetch(`${API_URL}/${id}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        console.error(`Error deleting todo${id}:`, error);
+        failedIds.push(id);
+      }
+    }
+    if (failedIds.length > 0) {
+      setTodos(
+        originalTodos.filter(
+          (todo) => !todo.isCompleted || failedIds.includes(todo.id)
+        )
+      );
+    }
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos));
+    setIsDeletingCompleted(false);
+  };
+
   return (
     <div
       data-theme={theme}
@@ -138,12 +185,39 @@ function App() {
             <TodoItem
               key={todo.id}
               todo={todo}
-              onDelete={onDelete}
+              onDelete={() => setDeletingId(todo.id)}
               onToggleComplete={onToggleComplete}
             />
           ))}
         </div>
       </div>
+      {deletingId && (
+        <DeleteConfirmModal
+          onCancel={() => setDeletingId(null)}
+          message="Are you sure you want to delete this todo?"
+          onConfirm={() => {
+            handleDelete(deletingId);
+            setDeletingId(null);
+          }}
+        />
+      )}
+      {isDeletingCompleted && (
+        <DeleteConfirmModal
+          onCancel={() => setIsDeletingCompleted(false)}
+          message={`Are you sure you want to delete all completed(${
+            todos.filter((todo) => todo.isCompleted).length
+          }) todos?`}
+          onConfirm={confirmDeleteCompleted}
+        />
+      )}
+      {hasCompletedTodos && (
+        <button
+          onClick={handleCompleteDeleted}
+          className="px-4 py-2 m-4 rounded bg-red-500 text-white transition-colors duration-300 hover:bg-red-600 cursor-pointer"
+        >
+          Clear Completed
+        </button>
+      )}
     </div>
   );
 }

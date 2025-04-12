@@ -13,7 +13,7 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   onToggleComplete,
 }) => {
   const handleComplete = () => {
-    onToggleComplete(todo.id);
+    onToggleComplete(todo.id as number);
   };
   return (
     <div
