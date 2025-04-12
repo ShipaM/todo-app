@@ -1,14 +1,20 @@
-import React, { useState } from "react";
+import React from "react";
 import { Todo } from "../types";
 
 type TodoItemProps = {
   todo: Todo;
   onDelete: (id: number | string) => void;
+  onToggleComplete: (id: number) => void;
 };
 
-export const TodoItem: React.FC<TodoItemProps> = ({ todo, onDelete }) => {
-  const [isCompleted, setIsCompleted] = useState(false);
-
+export const TodoItem: React.FC<TodoItemProps> = ({
+  todo,
+  onDelete,
+  onToggleComplete,
+}) => {
+  const handleComplete = () => {
+    onToggleComplete(todo.id);
+  };
   return (
     <div
       className="group flex items-center 
@@ -16,9 +22,9 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onDelete }) => {
     >
       <div className="flex items-center gap-3">
         <button
-          onClick={() => setIsCompleted(!isCompleted)}
+          onClick={handleComplete}
           className={`p-1 rounded-full border-2 cursor-pointer ${
-            isCompleted
+            todo.isCompleted
               ? "border-green-500 bg-green-500"
               : "border-gray-300 hover:border-gray-400"
           } transition-colors duration-300`}
@@ -26,7 +32,7 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onDelete }) => {
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className={`h-4 w-4 ${
-              isCompleted ? "text-white" : "text-transparent"
+              todo.isCompleted ? "text-white" : "text-transparent"
             }`}
             fill="none"
             viewBox="0 0 24 24"
@@ -42,13 +48,45 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onDelete }) => {
         </button>
         <span
           className={`text-1 ${
-            isCompleted
+            todo.isCompleted
               ? "line-through text-gray-400"
               : "text-gray-700 dark:text-gray-300"
           }`}
         >
           {todo.text}
         </span>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-gray-400 dark:text-gray-300">
+            Created:&nbsp;
+            {new Date(todo.createdAt).toLocaleString("ru-Ru", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+          {todo.deadline && (
+            <span
+              className={`text-xs ${
+                todo.isCompleted
+                  ? "text-gray-400"
+                  : new Date(todo.deadline) < new Date()
+                  ? "text-red-500"
+                  : "text-gray-500 dark:text-gray-300"
+              }`}
+            >
+              Dedline:&nbsp;
+              {new Date(todo.deadline).toLocaleString("ru-Ru", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
+        </div>
       </div>
       <button
         onClick={() => onDelete(todo.id)}
